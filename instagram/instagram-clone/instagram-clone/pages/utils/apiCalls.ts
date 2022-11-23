@@ -33,4 +33,32 @@ const getAllPosts = async () => {
   }
   return await response.json();
 };
-export { getFileUrl, createPostInDataBase, getAllPosts };
+
+const getAllComments = async (postId: string) => {
+  const response = await fetch(`api/comments?postId=${postId}`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  return await response.json();
+};
+const createComment = async (comment: any) => {
+  const response = await fetch("api/comments", {
+    method: "POST",
+    body: comment,
+  });
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  return await response.json();
+};
+export {
+  getFileUrl,
+  createPostInDataBase,
+  getAllPosts,
+  getAllComments,
+  createComment,
+};

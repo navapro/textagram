@@ -8,7 +8,8 @@ import {
 } from "@heroicons/react/outline";
 import { HeartIcon as HearIconFilled } from "@heroicons/react/solid";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createComment, getAllComments } from "../utils/apiCalls";
 
 interface postInterface {
   id: string;
@@ -18,9 +19,28 @@ interface postInterface {
   caption: string;
 }
 const Post = ({ id, userImg, username, img, caption }: postInterface) => {
+  const { data: session } = useSession() as any;
   const [comments, setComments] = useState([]);
   const [comment, setComment] = useState("");
-  const session = useSession();
+  const sendComment = async (e: any) => {
+    e.preventDefault();
+    const commentToSend = comment;
+    setComment("");
+    const commentBody = {
+      userImg: session.user.image,
+      content: commentToSend,
+      postId: id,
+    };
+    await createComment(commentBody);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const allComments = await getAllComments(id);
+      setComments(allComments);
+    };
+    fetchData();
+  }, [comments]);
   return (
     <div className="bg-white my-7 border rounded-sm pb-5">
       <div className="flex items-center p-5">
@@ -43,7 +63,7 @@ const Post = ({ id, userImg, username, img, caption }: postInterface) => {
               <PaperAirplaneIcon className="btn" />
             </div>
             <BookmarkIcon className="btn" />
-          </div>{" "}
+          </div>
         </>
       )}
 
@@ -52,6 +72,20 @@ const Post = ({ id, userImg, username, img, caption }: postInterface) => {
         <span className="font-bold mr-1">{username} </span>
         {caption}
       </p>
+      {comments.length > 0 && (
+        <div
+          className="ml-10 h-20 overflow-scroll
+         scrollbar-thumb-black scrollbar-thin"
+        >
+          {comments.map((comment: any) => (
+            <div key={comment.id} className="flex items-center space-x-2 mb-3">
+              <img className="h-7 rounded-full" src={comment.userImg} />
+              <p>{comment.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {session && (
         <div>
           <form className="flex items-center p-4">
@@ -63,7 +97,14 @@ const Post = ({ id, userImg, username, img, caption }: postInterface) => {
               placeholder="Add a comment..."
               className="border-none flex-1 focus:ring-0 outline-none"
             />
-            <button className="font-semibold text-blue-400">Post</button>
+            <button
+              type="submit"
+              disabled={!comment.trim()}
+              onClick={sendComment}
+              className="font-semibold text-blue-400"
+            >
+              Post
+            </button>
           </form>
         </div>
       )}

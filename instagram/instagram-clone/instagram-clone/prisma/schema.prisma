@@ -10,10 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Comment {
+  id       Int    @id @default(autoincrement())
+  userImg String
+  content  String
+  postId   Int?
+  Post     Post?  @relation(fields: [postId], references: [id])
+}
+
 model Post {
-  id      Int @id @default(autoincrement())
-  image   String
-  caption String
-  userName  String
-  userImg   String
+  id       Int       @id @default(autoincrement())
+  image    String
+  caption  String
+  userName String
+  userImg  String
+  comments Comment[]
 }

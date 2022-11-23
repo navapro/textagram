@@ -6,6 +6,32 @@ import { Dialog, Transition } from "@headlessui/react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { createPostInDataBase, getFileUrl } from "../utils/apiCalls";
+import { getStorage, ref, uploadString } from "firebase/storage";
+import { StringConcat } from "aws-cdk-lib";
+import { v4 as uuidv4 } from "uuid";
+
+const contactBanana = async (prompt: string) => {
+  const banana = require("@banana-dev/banana-dev");
+  const filename = uuidv4();
+  const storage = getStorage();
+  const storageRef = ref(storage, filename);
+  const model_inputs = {
+    prompt,
+    num_inference_steps: 50,
+    guidance_scale: 9,
+    height: 512,
+    width: 512,
+    seed: 3242,
+  };
+
+  const api_key = process.env.API_KEY;
+  const model_key = process.env.MODEL_KEY;
+
+  const out = await banana.run(api_key, model_key, model_inputs);
+  const image_byte_string = out.modelOutputs[0].image_base64;
+  await uploadString(storageRef, image_byte_string, "base64");
+  return filename;
+};
 
 const Modal = () => {
   const { data: session } = useSession() as any;
@@ -16,11 +42,8 @@ const Modal = () => {
     if (loading) return;
     try {
       setLoading(true);
-      const { data } = (await axios.get("http://35.234.246.234/", {
-        params: { prompt },
-      })) as any;
-
-      const fileUrl = await getFileUrl(data.filename);
+      const filename = await contactBanana(prompt);
+      const fileUrl = await getFileUrl(filename);
       createPostInDataBase({
         image: fileUrl,
         caption: prompt,
